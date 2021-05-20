@@ -19,4 +19,5 @@
         android:icon="@drawable/ic_action_aware_stream"
         android:title="Stream"
         app:showAsAction="always" />
+
 </menu>

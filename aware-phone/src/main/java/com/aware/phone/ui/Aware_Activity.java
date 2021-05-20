@@ -97,7 +97,7 @@ public abstract class Aware_Activity extends AppCompatPreferenceActivity {
             studyInfo.putExtra(Aware_Join_Study.EXTRA_STUDY_URL, Aware.getSetting(this, Aware_Preferences.WEBSERVICE_SERVER));
             startActivity(studyInfo);
         }
-        if (item.getTitle().toString().equalsIgnoreCase(getResources().getString(R.string.aware_team))) {
+        if (item.getTitle().toString().equalsIgnoreCase("Log Out")) {
             Intent about_us = new Intent(Aware_Activity.this, About.class);
             startActivity(about_us);
         }

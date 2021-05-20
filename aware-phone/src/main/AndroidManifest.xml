@@ -18,19 +18,15 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
-
     <uses-feature
         android:name="android.hardware.camera.front"
         android:required="false" />
-
     <uses-feature
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
-
     <uses-feature
         android:name="android.hardware.telephony"
         android:required="false" />
-
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
@@ -63,25 +59,30 @@
         android:icon="@drawable/ic_launcher_aware"
         android:label="AWARE"
         android:theme="@style/Theme.Aware">
+        <activity
+            android:name=".ui.login.LoginActivity"
+            android:label="@string/title_activity_login">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+
+            </intent-filter>
+        </activity>
         <!-- Activities -->
         <activity
-            android:name="com.aware.phone.Aware_Client"
+            android:name=".Aware_Client"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:exported="true"
             android:icon="@drawable/ic_launcher_aware"
             android:label="AWARE"
             android:launchMode="singleTop"
             android:theme="@style/Theme.Aware">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity
-            android:name="com.aware.phone.ui.Stream_UI"
+            android:name=".ui.Stream_UI"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:icon="@mipmap/ic_launcher_stream"
             android:label="@string/aware_stream"
@@ -89,7 +90,7 @@
             android:noHistory="true"
             android:theme="@style/Theme.Aware" />
         <activity
-            android:name="com.aware.phone.ui.Aware_QRCode"
+            android:name=".ui.Aware_QRCode"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/aware_studies"
             android:launchMode="singleTop"
@@ -99,7 +100,7 @@
                 android:value="com.aware.phone.Aware_Client" />
         </activity>
         <activity
-            android:name="com.aware.phone.ui.Plugins_Manager"
+            android:name=".ui.Plugins_Manager"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:icon="@drawable/ic_launcher_settings"
             android:label="@string/aware_plugins"
@@ -110,7 +111,7 @@
                 android:value="com.aware.phone.Aware_Client" />
         </activity>
         <activity
-            android:name="com.aware.phone.ui.About"
+            android:name=".ui.About"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/aware_team"
             android:launchMode="singleTop"
@@ -120,7 +121,7 @@
                 android:value="com.aware.phone.Aware_Client" />
         </activity>
         <activity
-            android:name="com.aware.phone.ui.Aware_Join_Study"
+            android:name=".ui.Aware_Join_Study"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="Join study"
             android:launchMode="singleTop"
@@ -130,6 +131,7 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
                     android:host="*"
                     android:pathPattern="/.*index.php/webservice/index/.*"
@@ -147,6 +149,7 @@
                     android:pathPattern="/.*index.php/webservice/index/.*"
                     android:scheme="aware-ssl" />
             </intent-filter>
+
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.aware.phone.Aware_Client" />
@@ -163,14 +166,13 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
-
         <receiver android:name="com.aware.Aware$AwareBoot">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-
     </application>
 
 </manifest>

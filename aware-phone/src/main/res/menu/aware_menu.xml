@@ -19,6 +19,6 @@
     <item
         android:id="@+id/aware_about"
         android:icon="@drawable/ic_launcher_aware"
-        android:title="@string/aware_team"
+        android:title="Log Out"
         app:showAsAction="never" />
 </menu>

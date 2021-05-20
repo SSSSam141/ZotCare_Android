@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import android.util.Patterns;
+import android.view.View;
+import android.widget.ProgressBar;
 
 import com.aware.phone.data.LoginRepository;
 import com.aware.phone.data.Result;
@@ -40,7 +42,10 @@ public class LoginViewModel extends ViewModel {
             loginResult.setValue(new LoginResult(R.string.login_failed));
         }
     }
+    public void Register(String username, String password, ProgressBar p) throws InterruptedException {
 
+        p.setVisibility(View.GONE);
+    }
     public void loginDataChanged(String username, String password) {
         if (!isUserNameValid(username)) {
             loginFormState.setValue(new LoginFormState(R.string.invalid_username, null));
