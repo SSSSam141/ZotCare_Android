@@ -1,6 +1,7 @@
 package com.aware.phone.ui;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -74,6 +75,7 @@ public abstract class Aware_Activity extends AppCompatPreferenceActivity {
         return true;
     }
 
+    @SuppressLint("WrongConstant")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getTitle().toString().equalsIgnoreCase(getResources().getString(R.string.aware_qrcode))) {

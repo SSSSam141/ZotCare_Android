@@ -162,6 +162,7 @@ public class AwareSyncAdapter extends AbstractThreadedSyncAdapter {
                 String[] columnsStr = getTableColumnsNames(CONTENT_URI, context);
                 String study_condition = getStudySyncCondition(context, database_table);
                 String latest = getLatestRecordSynced(database_table, columnsStr);
+                Log.i("LLLLLLLLLLLLLLLLLLLLLL",latest);
 
                 int total_records = getNumberOfRecordsToSync(CONTENT_URI, columnsStr, latest, study_condition, context);
                 boolean allow_table_maintenance = isTableAllowedForMaintenance(database_table);

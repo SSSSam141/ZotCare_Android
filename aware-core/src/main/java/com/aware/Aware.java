@@ -418,7 +418,8 @@ public class Aware extends Service {
         protected Boolean doInBackground(Void... params) {
             // Download the certificate, and block since we are already running in background
             // and we need the certificate immediately.
-            SSLManager.handleUrl(getApplicationContext(), "https://api.awareframework.com/index.php", true);
+ //           SSLManager.handleUrl(getApplicationContext(), "https://api.awareframework.com/index.php", true);
+//            "http://192.168.3.11:5000/datalogging/aware/upload"
 
             //Ping AWARE's server with awareContext device's information for framework's statistics log
             Hashtable<String, String> device_ping = new Hashtable<>();
@@ -434,12 +435,9 @@ public class Aware extends Service {
                 }
             } catch (PackageManager.NameNotFoundException e) {
             }
+            Log.i("TTTTTTTTTTT1",device_ping.toString());
 
-            try {
-                new Https(SSLManager.getHTTPS(getApplicationContext(), "https://api.awareframework.com/index.php")).dataPOST("https://api.awareframework.com/index.php/awaredev/alive", device_ping, true);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            new Http().dataPOST( "http://192.168.3.11:5000/datalogging/aware/upload", device_ping, true);
             return true;
         }
     }

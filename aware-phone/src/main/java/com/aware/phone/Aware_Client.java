@@ -9,11 +9,14 @@ import android.content.*;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -28,24 +31,47 @@ import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
+import androidx.work.Data;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.aware.Applications;
 import com.aware.Aware;
 import com.aware.Aware_Preferences;
+import com.aware.SignificantMotion;
 import com.aware.phone.ui.Aware_Activity;
 import com.aware.phone.ui.Aware_Join_Study;
 import com.aware.phone.ui.Aware_Participant;
+import com.aware.providers.Accelerometer_Provider;
 import com.aware.ui.PermissionsHandler;
+import com.aware.utils.Http;
 import com.aware.utils.Https;
 import com.aware.utils.SSLManager;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static com.aware.Accelerometer.EXTRA_LABEL;
 
 /**
  * @author df
  */
 public class Aware_Client extends Aware_Activity implements SharedPreferences.OnSharedPreferenceChangeListener {
+    public static String URL = "http://192.168.3.11:5000/datalogging/aware/upload";
 
     public static boolean permissions_ok;
     private static Hashtable<Integer, Boolean> listSensorType;
@@ -56,10 +82,11 @@ public class Aware_Client extends Aware_Activity implements SharedPreferences.On
 
     private final Aware.AndroidPackageMonitor packageMonitor = new Aware.AndroidPackageMonitor();
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Context appContext = getApplicationContext();
         prefs = getSharedPreferences("com.aware.phone", Context.MODE_PRIVATE);
         addPreferencesFromResource(R.xml.aware_preferences);
 
@@ -125,6 +152,18 @@ public class Aware_Client extends Aware_Activity implements SharedPreferences.On
             whitelisting.setData(Uri.parse("package:" + getPackageName()));
             startActivity(whitelisting);
         }
+
+        setup_aware(appContext);
+        SharedPreferences sp=getSharedPreferences("Login",Context.MODE_PRIVATE);
+        String token = sp.getString("token","");
+
+
+
+        Data inputdata= new Data.Builder().putString("token",token).putString("URL",URL).build();
+
+        PeriodicWorkRequest myWorkRequest = new PeriodicWorkRequest.Builder(AwareWorker.class, 1, TimeUnit.SECONDS).setInputData(inputdata).build();
+        WorkManager.getInstance(this).enqueue(myWorkRequest);
+
     }
 
     @Override
@@ -492,12 +531,117 @@ public class Aware_Client extends Aware_Activity implements SharedPreferences.On
         unregisterReceiver(packageMonitor);
     }
 
+    public void dataUpload(SensorEvent event) {
+
+
+        SharedPreferences sp=getSharedPreferences("Login",Context.MODE_PRIVATE);
+        String token = sp.getString("token","");
+        String URL = "http://192.168.3.11:5000/datalogging/aware/upload";
+        Context appContext = getApplicationContext();
+        RequestQueue requestQueue_mess = Volley.newRequestQueue(appContext);
+        long TS = System.currentTimeMillis();
+        if (Aware.getSetting(getApplicationContext(), Aware_Preferences.STATUS_WEBSOCKET).equals("true")) {
+            try {
+                JSONObject data = new JSONObject();
+                data.put(Accelerometer_Provider.Accelerometer_Data.DEVICE_ID, Aware.getSetting(getApplicationContext(), Aware_Preferences.DEVICE_ID));
+                data.put(Accelerometer_Provider.Accelerometer_Data.TIMESTAMP, TS);
+                data.put(Accelerometer_Provider.Accelerometer_Data.VALUES_0, event.values[0]);
+                data.put(Accelerometer_Provider.Accelerometer_Data.VALUES_1, event.values[1]);
+                data.put(Accelerometer_Provider.Accelerometer_Data.VALUES_2, event.values[2]);
+                data.put(Accelerometer_Provider.Accelerometer_Data.ACCURACY, event.accuracy);
+
+                JSONObject message = new JSONObject();
+                message.put("device_id", Aware.getSetting(getApplicationContext(), Aware_Preferences.DEVICE_ID));
+                message.put("table", "accelerometer");
+                message.put("data", data.toString());
+                String TAG = "AWARE::Accelerometer";
+                Log.d(TAG, "Stream: " + message.toString());
+
+                send_data(message,requestQueue_mess,URL,token);
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+
+    }
+    public void send_data(JSONObject jsonBody, RequestQueue requestQueue, String URL, final String token) {
+        Log.i("all",jsonBody.toString());
+        final String requestBody = jsonBody.toString();
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i("VOLLEY", response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("VOLLEY", error.toString());
+            }
+        }) {
+            @Override
+            public Map<String,String> getHeaders()throws AuthFailureError {
+                HashMap<String,String> headers = new HashMap<>();
+                headers.put("Authorization",token);
+                return headers;
+            }
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                try {
+                    return requestBody == null ? null : requestBody.getBytes("utf-8");
+                } catch (UnsupportedEncodingException uee) {
+                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                    return null;
+                }
+            }
+        };
+        requestQueue.add(stringRequest);
+    }
+    public void setup_aware(Context appContext) {
+        Aware.startAWARE(appContext);
+
+        Aware.setSetting(appContext,Aware_Preferences.STATUS_SCREEN,true);
+        Aware.setSetting(appContext,Aware_Preferences.STATUS_BATTERY,true);
+        Aware.setSetting(appContext, Aware_Preferences.STATUS_LOCATION_GPS, true);
+        Aware.setSetting(appContext, Aware_Preferences.FREQUENCY_LOCATION_GPS,0);
+
+        Aware.setSetting(appContext, com.aware.plugin.device_usage.Settings.STATUS_PLUGIN_DEVICE_USAGE, true);
+
+
+        Aware.setSetting(appContext, com.aware.plugin.studentlife.audio_final.Settings.STATUS_PLUGIN_STUDENTLIFE_AUDIO, true);
+
+        Aware.setSetting(appContext, Aware_Preferences.STATUS_COMMUNICATION_EVENTS, true);
+
+        Aware.setSetting(appContext, Aware_Preferences.STATUS_CALLS, true);
+
+        Aware.setSetting(appContext, Aware_Preferences.STATUS_MESSAGES, true);
+
+        Aware.startPlugin(appContext, "com.aware.plugin.device_usage");
+        Aware.startScreen(appContext);
+        Aware.startBattery(appContext);
+        Aware.startLocations(appContext);
+        Aware.startCommunication(appContext);
+       // Aware.stopPlugin(appContext, "com.aware.plugin.studentlife");
+
+    }
+
+
+
     private class AsyncPing extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {
             // Download the certificate, and block since we are already running in background
             // and we need the certificate immediately.
-            SSLManager.handleUrl(getApplicationContext(), "https://api.awareframework.com/index.php", true);
+           // SSLManager.handleUrl(getApplicationContext(), "http://192.168.3.11:5000/datalogging/aware/upload", true);
+           // SSLManager.handleUrl(getApplicationContext(), "https://api.awareframework.com/index.php", true);
 
             //Ping AWARE's server with getApplicationContext() device's information for framework's statistics log
             Hashtable<String, String> device_ping = new Hashtable<>();
@@ -513,12 +657,8 @@ public class Aware_Client extends Aware_Activity implements SharedPreferences.On
                 }
             } catch (PackageManager.NameNotFoundException e) {
             }
-
-            try {
-                new Https(SSLManager.getHTTPS(getApplicationContext(), "https://api.awareframework.com/index.php")).dataPOST("https://api.awareframework.com/index.php/awaredev/alive", device_ping, true);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            Log.i("TTTTTTTTTTT2",device_ping.toString());
+            new Http().dataPOST( "http://192.168.3.11:5000/datalogging/aware/upload", device_ping, true);
             return true;
         }
     }

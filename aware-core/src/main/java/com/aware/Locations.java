@@ -1,6 +1,7 @@
 package com.aware;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -34,6 +35,7 @@ public class Locations extends Aware_Sensor implements LocationListener {
      * TODO: extend to log satellite information
      */
     private final GpsStatus.Listener gps_status_listener = new GpsStatus.Listener() {
+        @SuppressLint("MissingPermission")
         @Override
         public void onGpsStatusChanged(int event) {
             switch (event) {
@@ -46,7 +48,7 @@ public class Locations extends Aware_Sensor implements LocationListener {
                 case GpsStatus.GPS_EVENT_STOPPED:
                     //Save best location, could be GPS or network
                     //This covers the case when the GPS stopped and we did not get a location fix.
-                    Location lastGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    @SuppressLint("MissingPermission") Location lastGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
                     Location lastNetwork = null;
                     //Do a quick check on the network provider
@@ -295,6 +297,7 @@ public class Locations extends Aware_Sensor implements LocationListener {
         if (Aware.DEBUG) Log.d(TAG, "Locations service terminated...");
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
@@ -442,8 +445,8 @@ public class Locations extends Aware_Sensor implements LocationListener {
 
         //If we have both GPS and Network active, check if we got a better location. Otherwise always keep the latest.
         if (Aware.getSetting(getApplicationContext(), Aware_Preferences.STATUS_LOCATION_GPS).equals("true") && Aware.getSetting(getApplicationContext(), Aware_Preferences.STATUS_LOCATION_NETWORK).equals("true")) {
-            Location lastGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            Location lastNetwork = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            @SuppressLint("MissingPermission") Location lastGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            @SuppressLint("MissingPermission") Location lastNetwork = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             if (isBetterLocation(lastNetwork, lastGPS)) {
                 if (isBetterLocation(newLocation, lastNetwork)) {
                     bestLocation = newLocation;
@@ -527,6 +530,7 @@ public class Locations extends Aware_Sensor implements LocationListener {
         }
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         if (Aware.DEBUG)
@@ -536,7 +540,7 @@ public class Locations extends Aware_Sensor implements LocationListener {
         // locations.
         if (Aware.getSetting(getApplicationContext(), Aware_Preferences.LOCATION_SAVE_ALL).equals("true")) {
             boolean updated = false;
-            Location newLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            @SuppressLint("MissingPermission") Location newLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             if (newLocation != null) {
                 saveLocation(newLocation);
                 updated = true;

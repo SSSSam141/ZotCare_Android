@@ -42,6 +42,7 @@ class Websocket : Aware_Sensor() {
 
         if (DEBUG) Log.d(TAG, "Websocket service created!")
 
+
         AsyncHttpClient.getDefaultInstance().websocket(Aware.getSetting(applicationContext, Aware_Preferences.WEBSOCKET_SERVER), "post",
                 object : AsyncHttpClient.WebSocketConnectCallback {
                     override fun onCompleted(ex: java.lang.Exception?, webSocket: WebSocket?) {

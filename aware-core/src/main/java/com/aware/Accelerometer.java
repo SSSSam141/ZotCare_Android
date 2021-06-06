@@ -7,6 +7,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.SyncRequest;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -31,8 +32,21 @@ import com.aware.utils.DatabaseHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 /**
  * AWARE Accelerometer module
@@ -133,6 +147,12 @@ public class Accelerometer extends Aware_Sensor implements SensorEventListener {
 
         if (awareSensor != null) awareSensor.onAccelerometerChanged(rowData);
 
+        SharedPreferences sp=getSharedPreferences("Login",Context.MODE_PRIVATE);
+        String token = sp.getString("token","");
+        String URL = "http://192.168.3.11:5000/datalogging/aware/upload";
+        Context appContext = getApplicationContext();
+//        RequestQueue requestQueue_mess = Volley.newRequestQueue(appContext);
+
         if (Aware.getSetting(getApplicationContext(), Aware_Preferences.STATUS_WEBSOCKET).equals("true")) {
             try {
                 JSONObject data = new JSONObject();
@@ -149,8 +169,10 @@ public class Accelerometer extends Aware_Sensor implements SensorEventListener {
                 message.put("table", "accelerometer");
                 message.put("data", data.toString());
 
-                Log.d(TAG, "Stream: " + message.toString());
-                Websocket.awareSensor.sendMessage(message.toString());
+               // Log.d(TAG, "Stream: " + message.toString());
+
+               // send_data(message,requestQueue_mess,URL,token);
+                //Websocket.awareSensor.sendMessage(message.toString());
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -198,6 +220,45 @@ public class Accelerometer extends Aware_Sensor implements SensorEventListener {
     public interface AWARESensorObserver {
         void onAccelerometerChanged(ContentValues data);
     }
+
+    public void send_data(JSONObject jsonBody, RequestQueue requestQueue, String URL, final String token) {
+        Log.i("all",jsonBody.toString());
+        final String requestBody = jsonBody.toString();
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i("VOLLEY", response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("VOLLEY", error.toString());
+            }
+        }) {
+            @Override
+            public Map<String,String> getHeaders()throws AuthFailureError {
+                HashMap<String,String> headers = new HashMap<>();
+                headers.put("Authorization",token);
+                return headers;
+            }
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                try {
+                    return requestBody == null ? null : requestBody.getBytes("utf-8");
+                } catch (UnsupportedEncodingException uee) {
+                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                    return null;
+                }
+            }
+        };
+        requestQueue.add(stringRequest);
+    }
+
 
     /**
      * Calculates the sampling rate in Hz (i.e., how many samples did we collect in the past second)
